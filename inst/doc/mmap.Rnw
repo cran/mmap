@@ -240,6 +240,7 @@ section for details.
 m <- mmap(file=tmp, mode=int8())
 m[]
 nbytes(m)
+munmap(m)
 @
 
 \section{Data Types}
