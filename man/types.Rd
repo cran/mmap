@@ -1,6 +1,10 @@
 \name{C_types}
 \alias{types}
 \alias{as.Ctype}
+\alias{is.Ctype}
+\alias{bits}
+\alias{logi8}
+\alias{logi32}
 \alias{char}
 \alias{uchar}
 \alias{cplx}
@@ -11,6 +15,7 @@
 \alias{int24}
 \alias{uint24}
 \alias{int32}
+\alias{int64}
 \alias{real32}
 \alias{real64}
 \alias{as.char}
@@ -34,6 +39,7 @@ These functions describe the types of raw binary
 data stored on disk. 
 }
 \usage{
+%bits(length = 0)
 char(length = 0)
 uchar(length = 0)
 int8(length = 0)
@@ -43,14 +49,21 @@ uint16(length = 0)
 int24(length = 0)
 uint24(length = 0)
 int32(length = 0)
+int64(length = 0)
 real32(length = 0)
 real64(length = 0)
 cplx(length = 0)
+
+as.Ctype(x)
+is.Ctype(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{length}{
 desired length.
+}
+  \item{x}{
+R object to coerce or test
 }
 }
 \details{
@@ -142,6 +155,15 @@ writeBin(1:10L, tmp, size=4L)
 four_byte <- mmap(tmp, int32())
 four_byte[]
 munmap(four_byte)
+
+# write 32 bit integers as 64 bit longs (where supported)
+int64()  # note it is a double in R, but described as int64
+writeBin(1:10L, tmp, size=8L)
+eight_byte <- mmap(tmp, int64())
+storage.mode(eight_byte[])  # using R doubles to preserve most long values
+eight_byte[5] <- 2^40  # write as a long, a value in R that is double
+eight_byte[5]
+munmap(eight_byte)
 
 unlink(tmp)
 }

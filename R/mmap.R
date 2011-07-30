@@ -28,10 +28,10 @@ replaceFUN.mmap <- function(x) {
 
 # Basic S3 methods
 head.mmap <- function(x, n=6L, ...) {
-  x[1:(min(length(x),n))]
+  x[1:(min(NROW(x),n))]
 }
 tail.mmap <- function(x, n=6L, ...) {
-  x[(length(x)-n):length(x)]
+  x[(NROW(x)-n):NROW(x)]
 }
 
 str.mmap <- function (object, ...) 
@@ -47,6 +47,8 @@ str.mmap <- function (object, ...)
     str(object$storage.mode)
     cat("  pagesize     :")
     str(object$pagesize)
+    cat("  dim          :")
+    print(object$dim)
 }
 
 summary.mmap <- function(object) { str(object) }
@@ -59,6 +61,7 @@ print.mmap <- function(x, ...) {
   type_name <- switch(typeof(x$storage.mode),
                       "list"="struct",
                       "integer"="int",
+                      "logical"="logi",
                       "double"="num",
                       "complex"="cplx",
                       "character"="chr",
@@ -66,15 +69,20 @@ print.mmap <- function(x, ...) {
   if(type_name == "struct") {
     firstN <- x[1][[1]]
   } else {
-  firstN <- x[1:min(6,length(x))]
+  firstN <- x[1:min(6,NROW(x))]
   firstN <- if(cumsum(nchar(firstN))[length(firstN)] > 20) {
                 firstN[1:min(3,length(x))]
               } else {
                 firstN
               }
   }
+  if( !is.null(dim(x))) { # has dim
+  cat(paste("<mmap:",file_name,">  (",class(x$storage.mode)[2],") ",
+            type_name," [1:", nrow(x),", 1:", ncol(x),"]",sep=""),firstN,"...\n")
+  } else {
   cat(paste("<mmap:",file_name,">  (",class(x$storage.mode)[2],") ",
             type_name," [1:", length(x),"]",sep=""),firstN,"...\n")
+  }
 }
 print.summary_mmap <- function() {}
 
@@ -160,21 +168,29 @@ is.mmap <- function(x) {
 
 `[.mmap` <- function(x, i, j, ...) {
   if(!x$bytes) stop('no data to extract')
-  if(missing(i))
-    i <- 1:length(x)
-  if(missing(j))
-    j <- 1:length(x$storage.mode)
-  if(is.character(j))
-    j <- match(j, names(x$storage.mode))
+  if( is.struct(x$storage.mode) || is.null(x$dim)) {
+    if(missing(i))
+      i <- 1:length(x)
+    if(missing(j))
+      j <- 1:length(x$storage.mode)
+    if(is.character(j))
+      j <- match(j, names(x$storage.mode))
+    DIM <- NULL
+  } else {
+    if( missing(i))
+      i <- 1:dim(x)[1]
+    if( missing(j))
+      j <- 1:dim(x)[2]
+    DIM <- c(length(i),length(j))
+    i <- .Call("convert_ij_to_i", dim(x)[1], as.integer(i), as.integer(j))
+    j <- 1L
+  }
   j <- j[j>0] # only positive values
-  xx <- .Call("mmap_extract", i, as.integer(j), x, PKG="mmap")
+  xx <- .Call("mmap_extract", i, as.integer(j), DIM, x, PKG="mmap")
   names(xx) <- names(x$storage.mode)[j]
   if(is.null(extractFUN(x))) {
     xx
   } else as.function(extractFUN(x))(xx)
-#  if(is.null(extractFUN(x))) {
-#    .Call("mmap_extract", i, as.integer(j), x, PKG="mmap")
-#  } else as.function(extractFUN(x))(.Call("mmap_extract", i, as.integer(j), x, PKG="mmap"))
 }
 
 `[<-.mmap` <- function(x, i, j, ..., sync=TRUE, value) {
@@ -182,16 +198,29 @@ is.mmap <- function(x) {
   if(!x$bytes) stop('no data to extract')
   if(is.struct(x$storage.mode) && !is.list(value))
     value <- list(value)
-  if(missing(i))
-    i <- 1:length(x)
-  if(missing(j))
-    j <- 1:length(x$storage.mode)
-  if(is.character(j))
-    j <- match(j, names(x$storage.mode))
-  if(length(i) != length(value))
-    if(is.list(value))
-      value <- lapply(value, rep, length.out=length(i))
-    else value <- rep(value, length.out=length(i))
+  if( is.struct(x$storage.mode) || is.null(x$dim)) {
+    if(missing(i))
+      i <- 1:length(x)
+    if(missing(j))
+      j <- 1:length(x$storage.mode)
+    if(is.character(j))
+      j <- match(j, names(x$storage.mode))
+    if(length(i) != length(value))
+      if(is.list(value))
+        value <- lapply(value, rep, length.out=length(i))
+      else value <- rep(value, length.out=length(i))
+  } else { # has dimension
+    if(missing(i))
+      i <- 1:dim(x)[1]
+    if(missing(j))
+      j <- 1:dim(x)[2]
+    if(is.character(j))
+      j <- match(j, names(x$dimnames))
+    i <- .Call("convert_ij_to_i", dim(x)[1], as.integer(i), as.integer(j))
+    j <- 1L
+    if(length(i) != length(value))
+      value <- rep(value, length.out=length(i))
+  }
 # likely we need to check for list()/struct to correctly handle in C
   if(max(i) > length(x) || min(i) < 0)
     stop("improper 'i' range")
@@ -204,7 +233,21 @@ is.mmap <- function(x) {
 length.mmap <- function(x) {
   size_in_bytes <- x$bytes
   size <- attr(x$storage.mode,"bytes")
+  if( class(x$storage.mode)[2] == 'bits')
+    as.integer(size_in_bytes/size) * 32L
+  else
   as.integer(size_in_bytes/size)
+}
+
+`length<-.mmap` <- function(x, value) {
+  # should have some mechanism to sanity check length
+  # as to not pass end of file
+  size_in_bytes <- value * attr(x$storage.mode, "bytes")
+  if(file.info(names(x$filedesc))$size < size_in_bytes) {
+    stop("cannot increase an mmap file's size") # implement something automatic here
+  }
+  x$bytes <- as.double(size_in_bytes)
+  x 
 }
 
 
@@ -219,6 +262,11 @@ as.mmap <- function(x, mode, file,...) {
 }
 
 #as.mmap.data.frame <- function(x, mode=as.struct(x), file, ...) 
+
+as.mmap.raw <- function(x, mode=raw(), file=tempmmap(), ...) {
+  writeBin(x, file)
+  mmap(file, raw())
+}
 
 as.mmap.integer <- function(x,
                             mode=integer(),
@@ -246,6 +294,47 @@ as.mmap.complex <- function(x,
   writeBin(x, file, size=nbytes)
   mmap(file, as.Ctype(mode))
 }
+
+as.mmap.character <- function(x, 
+                              mode=char(nchar(x[1])), 
+                              file=tempmmap(), force=FALSE, ...) {
+  if( !all(nchar(x) == nchar(x[1]))) {
+    if(!force)
+      stop("requires fixed-width character vector. Use make.fixedwidth first.")
+    x <- make.fixedwidth(x)
+  }
+  #if( !identical(mode, char(nchar(x[1])))){
+  writeBin(x, file, size = nbytes)
+  mmap(file, as.Ctype(mode))
+}
+
+as.mmap.matrix <- function(x, mode, file=tempmmap(), ...) {
+  if( missing(mode))
+    mode <- vector(storage.mode(x))
+  DIM <- dim(x)
+  dim(x) <- NULL
+  x <- as.mmap(x, mode, file, ...)
+  dim(x) <- DIM
+  x
+}
+
+as.mmap.data.frame <- function(x, mode, file, ...) {
+  if( !missing(mode))
+    warning("'mode' argument currently unsupported")
+  tmp <- tempfile()
+  bytes.needed <- function(x) {
+    sum(sapply(x, function(X) sizeof(as.Ctype(do.call(storage.mode(X),list(0)))))) * NROW(x)
+  }
+  writeBin(rep(as.raw(0), bytes.needed(x)), tmp)
+  struct.type <- do.call(struct, sapply(x, function(X) (do.call(storage.mode(X),list(0)))))
+  m <- mmap(tmp, struct.type, extractFUN=function(x) as.data.frame(x))
+  dimnames(m) <- list(NULL, colnames(x))
+  for(i in 1:NCOL(x)) {
+    m[,i] <- x[,i]
+  }
+  m
+}
+
 
 tempmmap <- function(tmpdir=tempdir()) {
   tempfile("mmap",tmpdir)

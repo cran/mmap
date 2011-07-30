@@ -8,6 +8,8 @@ as.Ctype <- function(x) {
   UseMethod("as.Ctype")
 }
 
+is.Ctype <- function(x) inherits(x, "Ctype")
+
 as.Ctype.Ctype <- function(x) return(x)
 
 as.Ctype.integer <- function(x) {
@@ -16,9 +18,17 @@ as.Ctype.integer <- function(x) {
   else int32(length(x))
 }
 as.Ctype.double <- function(x) {
-  if(length(x) == 1 && x==0)
-    real64()
-  else real64(length(x))
+  csingle <- attr(x, "Csingle")
+  if( !is.null(csingle) && isTRUE(csingle)) {
+    if(length(x) == 1 && x==0)
+      real32()
+    else
+      real32(length(x))
+  } else {
+    if(length(x) == 1 && x==0)
+      real64()
+    else real64(length(x))
+  }
 }
 as.Ctype.raw <- function(x) {
   if(length(x) == 1 && x==0)
@@ -26,14 +36,17 @@ as.Ctype.raw <- function(x) {
   else uchar(length(x))
 }
 as.Ctype.character <- function(x) {
-  if(length(x) == 1 && x==0)
-    char()
-  else char(length(x))
+  char(nchar(x))
 }
 as.Ctype.complex <- function(x) {
   if(length(x) == 1 && x==0)
     cplx()
   else cplx(length(x))
+}
+as.Ctype.logical <- function(x) {
+  if(length(x) == 1 && x==0)
+    logi32()
+  else logi32(length(x))
 }
 
 char <- C_char <- function(length=0) {
@@ -117,6 +130,12 @@ int32 <- C_int <- function(length=0) {
   structure(integer(length), bytes=4L, signed=1L, class=c("Ctype","int"))
 }
 
+int64 <- C_int64 <- function(length=0) {
+  # currently untested and experimental. Will lose precision in R though we cast
+  # to a double precision float to minimize the damage
+  structure(double(length), bytes=8L, signed=1L, class=c("Ctype","int64"))
+}
+
 uint32 <- C_uint <- function(length=0) {
   structure(integer(length), bytes=4L, signed=0L, class=c("Ctype","uint"))
 }
@@ -133,12 +152,62 @@ cplx <- C_complex <- function(length=0) {
   structure(complex(length),  bytes=16L, signed=1L, class=c("Ctype","complex"))
 }
 
-struct <- as.list.Ctype <- function(...) {
-  dots <- lapply(list(...),as.Ctype)
-  bytes <- sapply(dots, attr, which="bytes")
-  structure(dots, bytes=sum(bytes), offset=cumsum(bytes)-bytes,
-            signed=NA, class=c("Ctype","struct"))
+bits <- C_bits <- function(length=0) {
+  structure(logical(length), bytes=4L, signed=0L, class=c("Ctype", "bits"))
 }
+
+logi32 <- C_logi <- function(length=0) {
+  structure(logical(length), bytes=4L, signed=0L, class=c("Ctype", "logi32"))
+}
+
+logi8 <- C_logi <- function(length=0) {
+  structure(logical(length), bytes=1L, signed=0L, class=c("Ctype", "logi8"))
+}
+
+pad <- C_pad <- function(...) {
+  UseMethod("pad")
+}
+
+pad.default <- function(length=0, ...) {
+  structure(NA_integer_, bytes=length, class=c("Ctype", "pad"))
+}
+
+pad.Ctype <- function(ctype, ...) {
+  pad(attr(ctype, "bytes"))
+}
+
+.struct <- function (..., bytes, offset) {
+    dots <- lapply(list(...), as.Ctype)
+    if( missing(bytes))
+      bytes <- sapply(dots, attr, which = "bytes")
+    if( missing(offset))
+      offset <- cumsum(bytes) - bytes
+    structure(dots, bytes = as.integer(sum(bytes)), 
+                    offset = as.integer(offset), 
+                    signed = NA, 
+              class = c("Ctype", "struct"))
+}
+
+struct <- function (..., bytes, offset) {
+    dots <- lapply(list(...), as.Ctype)
+    bytes_ <- sapply(dots, attr, which = "bytes")
+    if (missing(offset)) 
+      offset <- cumsum(bytes_) - bytes_
+    if (!missing(bytes)) 
+      bytes_ <- bytes
+    padding <- which(sapply(dots, function(C) class(C)[2])=="pad")
+    if( length(padding) > 0) {
+      dots <- dots[-padding]
+      offset <- offset[-padding]
+    }
+    structure(dots, bytes = as.integer(sum(bytes_)), 
+                    offset = as.integer(offset), 
+                    signed = NA, 
+              class = c("Ctype", "struct"))
+}
+
+as.list.Ctype <- struct
+
 
 `[[<-.struct` <- function(x,i,value) {
   x <- unclass(x)
@@ -197,3 +266,47 @@ as.struct.default <- function(x, ...) {
 nbytes <- function(x) UseMethod("nbytes")
 nbytes.Ctype <- function(x) attr(x, "bytes")
 nbytes.mmap <- function(x) x$bytes
+
+##  sizeof analogous to sizeof() in C.  Allows for
+##  passing either Ctype objects, or functions that
+##  construct Ctype objects.
+##    e.g. sizeof(int8) or sizeof(int8())
+
+sizeof <- function(type) {
+  UseMethod("sizeof")
+}
+
+sizeof.function <- function(type) {
+  type_name <- deparse(substitute(type))
+  type <- try(as.Ctype(type()), silent=TRUE)
+  if( is.Ctype(type))
+    nbytes(type)
+  else
+    stop(paste("can't find 'sizeof'",type_name))
+}
+
+sizeof.Ctype <- function(type) {
+  nbytes(type)
+}
+
+sizeof.default <- function(type) {
+  ty <- try( as.Ctype(type), silent=TRUE)
+  if( is.Ctype(ty))
+    sizeof(ty)
+  else
+    stop("unsupported type")
+}
+
+# convert non-fixed width strings to fw for mmap
+make.fixedwidth <- function(x, width=NA, justify=c("left","right")) {
+  if( !is.character(x))
+    stop("'x' must be a character vector")
+  if(is.na(width))
+    width <- max(nchar(x))
+  justify <- match.arg(justify)
+  if(justify=="left")
+    fmt <- "%-"
+  else fmt <- "%"
+  sprintf(paste(fmt,width,"s",sep=""), x)  # e.g. "%-9s"
+}
+
