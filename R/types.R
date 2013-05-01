@@ -49,12 +49,12 @@ as.Ctype.logical <- function(x) {
   else logi32(length(x))
 }
 
-char <- C_char <- function(length=0) {
+char <- C_char <- function(length=0, nul=TRUE) {
   if(length==0) { # a char byte
     structure(raw(length), bytes=1L, signed=1L, class=c("Ctype","char"))
   } else {
-    structure(character(length+1), bytes=as.integer(length+1), signed=0L,
-              class=c("Ctype","char"))
+    structure(character(length+ifelse(nul,1,0)), bytes=as.integer(length+ifelse(nul,1,0)), signed=0L,
+              nul=nul, class=c("Ctype","char"))
   }
 }
 
@@ -133,7 +133,9 @@ int32 <- C_int <- function(length=0) {
 int64 <- C_int64 <- function(length=0) {
   # currently untested and experimental. Will lose precision in R though we cast
   # to a double precision float to minimize the damage
-  structure(double(length), bytes=8L, signed=1L, class=c("Ctype","int64"))
+  if(.Machine$sizeof.long != 8)
+    warning("unsupported int64, use int32 or real64")
+  structure(double(length), bytes=as.integer(.Machine$sizeof.long), signed=1L, class=c("Ctype","int64"))
 }
 
 uint32 <- C_uint <- function(length=0) {

@@ -69,14 +69,14 @@ print.mmap <- function(x, ...) {
   if(type_name == "struct") {
     firstN <- x[1][[1]]
   } else {
-  firstN <- x[1:min(6,NROW(x))]
+  firstN <- head(x)
   firstN <- if(cumsum(nchar(firstN))[length(firstN)] > 20) {
                 firstN[1:min(3,length(x))]
               } else {
                 firstN
               }
   }
-  if( !is.null(dim(x))) { # has dim
+  if( !is.null(x$dim)) { # has dim
   cat(paste("<mmap:",file_name,">  (",class(x$storage.mode)[2],") ",
             type_name," [1:", nrow(x),", 1:", ncol(x),"]",sep=""),firstN,"...\n")
   } else {
@@ -109,10 +109,13 @@ mmap <- function(file, mode=int32(),
                  ...) {
     if(missing(file))
       stop("'file' must be specified")
+    # pageoff is the offset from page boundary
+    # off is the page-aligned offset
+    #   e.g. off=22 would set off=0 and pageoff=22 on a system with 4096 page sizing
+    pageoff <- off %% pagesize()
+    off <- off - pageoff
     if(missing(len))
-      len <- file.info(file)$size
-    if(off %% pagesize() != 0L)
-      stop(paste("'off' must be a multiple of",pagesize(),"(pagesize)"))
+      len <- file.info(file)$size - off - pageoff
     
     mmap_obj <- .Call("mmap_mmap", 
                       as.Ctype(mode),
@@ -121,13 +124,8 @@ mmap <- function(file, mode=int32(),
                       as.integer(flags), 
                       as.double(len),
                       as.integer(off),
+                      as.integer(pageoff),
                       PKG="mmap")
-#    names(mmap_obj) <- c("data",
-#                         "bytes",
-#                         "filedesc",
-#                         "storage.mode",
-#                         "pagesize")
-#    mmap_obj <- list2env(mmap_obj)  # change list to env
     reg.finalizer(mmap_obj, mmap_finalizer, TRUE)
     mmap_obj$filedesc <- structure(mmap_obj$filedesc, .Names=file)
     mmap_obj$extractFUN <- extractFUN
@@ -182,7 +180,7 @@ is.mmap <- function(x) {
     if( missing(j))
       j <- 1:dim(x)[2]
     DIM <- c(length(i),length(j))
-    i <- .Call("convert_ij_to_i", dim(x)[1], as.integer(i), as.integer(j))
+    i <- .Call("convert_ij_to_i", as.double(dim(x)[1]), as.integer(i), as.integer(j))
     j <- 1L
   }
   j <- j[j>0] # only positive values
@@ -216,7 +214,7 @@ is.mmap <- function(x) {
       j <- 1:dim(x)[2]
     if(is.character(j))
       j <- match(j, names(x$dimnames))
-    i <- .Call("convert_ij_to_i", dim(x)[1], as.integer(i), as.integer(j))
+    i <- .Call("convert_ij_to_i", as.double(dim(x)[1]), as.integer(i), as.integer(j))
     j <- 1L
     if(length(i) != length(value))
       value <- rep(value, length.out=length(i))
@@ -234,9 +232,9 @@ length.mmap <- function(x) {
   size_in_bytes <- x$bytes
   size <- attr(x$storage.mode,"bytes")
   if( class(x$storage.mode)[2] == 'bits')
-    as.integer(size_in_bytes/size) * 32L
+    trunc(size_in_bytes/size) * 32L
   else
-  as.integer(size_in_bytes/size)
+  trunc(size_in_bytes/size)
 }
 
 `length<-.mmap` <- function(x, value) {

@@ -4,7 +4,10 @@ Ops.mmap <- function(e1,e2) {
                          ">="=3L,
                          "<="=4L,
                          ">"= 5L,
-                         "<"= 6L)
+                         "<"= 6L,
+                             -1L)
+  if(OPS == -1L)
+    stop(paste(.Generic,"unsupported for 'mmap' objects"))
   if(is.mmap(e1)) {
     if(storage.mode(e1$storage.mode) == "character")
       e2 <- charToRaw(e2)
@@ -19,7 +22,10 @@ Ops.mmap <- function(e1,e2) {
 dim.mmap <- function(x) {
   if( is.struct(x$storage.mode))
     return( c(length(x), length(x$storage.mode)) )
-  x$dim
+  if(is.null(x$dim))
+    c(length(x),1)
+  else
+    x$dim
 }
 
 `dim<-.mmap` <- function(x, value) {
