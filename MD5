@@ -1,4 +1,4 @@
-e84720883fe02cc0296fc6618dac686f *DESCRIPTION
+8ca0656d1562ed9191b5320ad800e17c *DESCRIPTION
 61be83963c2350571bc8ab61b12382af *NAMESPACE
 bc53a376a4d8e18fed2433860df959dc *R/methods.R
 782ac5b2a1005f10310585c54fe2d7b5 *R/mmap.R
@@ -12,7 +12,7 @@ bc53a376a4d8e18fed2433860df959dc *R/methods.R
 d41d8cd98f00b204e9800998ecf8427e *configure.win
 f3a746570329cbe633b7ff2363bc95f0 *inst/doc/mmap.R
 672623c0307609dd9295d591262c67e3 *inst/doc/mmap.Rnw
-58d8a0cfe8dc0b2991453529891b4699 *inst/doc/mmap.pdf
+329640e72ed5b0e0197e8323c1de21d6 *inst/doc/mmap.pdf
 b7e6639f1e1183cb9826c0ca4b8add97 *man/make.fixedwidth.Rd
 37457fb62fd5ad95633c7ec8e7c83b44 *man/mmap.Rd
 e2a9efe85260553c8a171ab4621c4f80 *man/mmap.csv.Rd
@@ -24,7 +24,7 @@ db756a9f1e54c85394564a2c6dbb6933 *man/struct.Rd
 703d3d9a5d8a8257e413093f378d669a *man/types.Rd
 856257cdf0d599694f0516a1709477fa *src/config.h.in
 f0f80e1a6477ec89440aa438cd0c288b *src/init.c
-184cf163df20f3d67f4f61d709a21e93 *src/mmap.c
+282e540242b0d6fdc0da57a51fa5a0a3 *src/mmap.c
 67ede02306b407c3508b6a454aeec38d *src/mmap.h
 7f3eb46662e10e72dd28c8c2f1ebfcbc *src/types.c
 4e512685ced5a1c649c4894a82ae5998 *tests/integers.R
