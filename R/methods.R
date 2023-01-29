@@ -11,11 +11,11 @@ Ops.mmap <- function(e1,e2) {
   if(is.mmap(e1)) {
     if(storage.mode(e1$storage.mode) == "character")
       e2 <- charToRaw(e2)
-    .Call("mmap_compare", e2, OPS, e1) 
+    .Call("mmap_compare", e2, OPS, e1, PACKAGE="mmap") 
   } else if(is.mmap(e2)) {
     if(storage.mode(e2$storage.mode) == "character")
       e1 <- charToRaw(e1)
-    .Call("mmap_compare", e1, OPS, e2) 
+    .Call("mmap_compare", e1, OPS, e2, PACKAGE="mmap") 
   }
 }
 
@@ -57,3 +57,18 @@ dimnames.mmap <- function(x) {
 }
 
 is.array.mmap <- function(x) TRUE  # used for NROW/NCOL
+
+is.na.mmap <- function(x) {
+  if(is.cstring(x$storage.mode)) {
+    .Call("mmap_cstring_isna",x,FALSE)
+  } else {
+    stop("is.na only implemented for Ctype cstring")
+  }
+}
+anyNA.mmap <- function(x, recursive=FALSE) {
+  if(is.cstring(x$storage.mode)) {
+    .Call("mmap_cstring_isna",x,TRUE)
+  } else {
+    stop("anyNA only implemented for Ctype cstring")
+  }
+}

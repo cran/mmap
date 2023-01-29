@@ -1,7 +1,6 @@
 # C_types
 sizeofCtypes <- function() {
-  structure(.Call("sizeof_Ctypes"), 
-            .Names=c("char","short","int","long","float","double"))
+  .Call("sizeof_Ctypes", PACKAGE="mmap")
 }
 
 as.Ctype <- function(x) {
@@ -310,5 +309,27 @@ make.fixedwidth <- function(x, width=NA, justify=c("left","right")) {
     fmt <- "%-"
   else fmt <- "%"
   sprintf(paste(fmt,width,"s",sep=""), x)  # e.g. "%-9s"
+}
+
+cstring <- C_cstring <- function(length=0, na.strings="NA") {
+  if(na.strings != "NA") {
+    warning("only na.strings=\"NA\" is supported in the current version")
+  }
+  structure(character(length), bytes=NA_integer_, signed=0L,
+            na.strings=na.strings, class=c("Ctype","cstring"))
+}
+
+as.cstring <- function(x, ...) UseMethod("as.cstring")
+as.cstring.mmap <- function(x, length, ...) {
+  x$storage.mode <- char(length)
+  x 
+}
+
+is.cstring <- function(x) {
+  inherits(x,"cstring")
+}
+
+cstring.MaxWidth <- function() {
+  .Call("mmap_cstring_maxwidth", PACKAGE="mmap")
 }
 

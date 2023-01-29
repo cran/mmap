@@ -11,6 +11,8 @@ extern SEXP  mmap_signedSymbol;
 extern SEXP  mmap_offsetSymbol;
 extern SEXP  mmap_pagesizeSymbol;
 extern SEXP  mmap_dimSymbol;
+extern SEXP  mmap_lengthSymbol;
+extern SEXP  mmap_cstringSymbol;
 extern SEXP  mmap_protSymbol;
 extern SEXP  mmap_flagsSymbol;
 extern SEXP  mmap_handleSymbol; /* WIN */
@@ -23,6 +25,7 @@ extern SEXP  nul_Symbol;
 
 #define MMAP_DATA(mmap_object)        R_ExternalPtrAddr(findVar(mmap_dataSymbol,mmap_object))
 #define MMAP_SIZE(mmap_object)        (long)REAL(findVar(mmap_bytesSymbol,mmap_object))[0]
+#define MMAP_LENGTH(mmap_object)      (long)REAL(findVar(mmap_lengthSymbol,mmap_object))[0]
 #define MMAP_FD(mmap_object)          INTEGER(findVar(mmap_filedescSymbol,mmap_object))[0]
 #define MMAP_MODE(mmap_object)        TYPEOF(findVar(mmap_storageModeSymbol,mmap_object))
 #define MMAP_SMODE(mmap_object)       findVar(mmap_storageModeSymbol,mmap_object)
@@ -36,6 +39,7 @@ extern SEXP  nul_Symbol;
                                         mmap_object),mmap_offsetSymbol))[i]
 #define MMAP_PAGESIZE(mmap_object)    INTEGER(findVar(mmap_pagesizeSymbol,mmap_object))[0]
 #define MMAP_DIM(mmap_object)         findVar(mmap_dimSymbol,mmap_object)
+#define MMAP_CSTRING(mmap_object)     findVar(mmap_cstringSymbol,mmap_object)
 #define MMAP_PROT(mmap_object)        findVar(mmap_protSymbol,mmap_object)
 #define MMAP_ENDIAN(mmap_object)      INTEGER(findVar(mmap_endianSymbol,mmap_object))[0]
 #define MMAP_FLAGS(mmap_object)       findVar(mmap_flagsSymbol,mmap_object)
@@ -101,11 +105,11 @@ extern SEXP  nul_Symbol;
 #define MADV_UNMERGEABLE 13             /* KSM may not merge identical pages */
 #endif
 
-SEXP make_bitmask ();
+SEXP make_bitmask (void);
 SEXP mmap_mkFlags (SEXP _flags);
 SEXP mmap_munmap (SEXP mmap_obj);
 SEXP mmap_mmap (SEXP _type, SEXP _fildesc, SEXP _prot, SEXP _flags, SEXP _len, SEXP _off, SEXP _pageoff, SEXP _endian);
-SEXP mmap_pagesize ();
+SEXP mmap_pagesize (void);
 SEXP mmap_is_mmapped (SEXP mmap_obj);
 SEXP mmap_msync (SEXP mmap_obj, SEXP _flags);
 SEXP mmap_madvise (SEXP mmap_obj, SEXP _len, SEXP _flags);
@@ -113,8 +117,18 @@ SEXP mmap_mprotect (SEXP mmap_obj, SEXP index, SEXP prot);
 SEXP mmap_extract (SEXP index, SEXP field, SEXP dim, SEXP mmap_obj);
 SEXP mmap_replace (SEXP index, SEXP field, SEXP value, SEXP mmap_obj);
 SEXP mmap_compare (SEXP compare_to, SEXP compare_how, SEXP mmap_obj);
+
+SEXP mmap_cstring_create (SEXP mmap_obj, SEXP _chunk_size);
+SEXP mmap_cstring_words (SEXP cstring);
+SEXP mmap_cstring_chunks (SEXP cstring);
+SEXP mmap_cstring_extract (SEXP mmap_obj, SEXP i);
+SEXP mmap_cstring_compare (SEXP compare_to, SEXP compare_how, SEXP mmap_obj, int *hits);
+SEXP mmap_cstring_length (SEXP mmap_obj);
+SEXP mmap_cstring_isna (SEXP mmap_obj, SEXP any);
+SEXP mmap_cstring_maxwidth (void);
+
 SEXP convert_ij_to_i (SEXP rows, SEXP i, SEXP j);
-SEXP sizeof_Ctypes ();
+SEXP sizeof_Ctypes (void);
 
 short mmap_rev_short(const short x, int len);
 int   mmap_rev_int(const int x, int len);

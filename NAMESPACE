@@ -26,7 +26,9 @@ export(
        uchar, uint8, uint16, uint24, int64,
        real32, real64,
        cplx,
+       cstring,
        as.uchar, as.char, as.int8, as.uint8, as.int16, as.uint16, as.int24,
+       as.cstring,
        pad,
 
        struct,
@@ -37,12 +39,16 @@ export(
        is.Ctype,
        nbytes,
 
+       is.na.mmap,
        dim.mmap, "dim<-.mmap",
        dimnames.mmap, "dimnames<-.mmap",
        is.array.mmap,
        sizeof,
+       sizeofCtypes,
 
        make.fixedwidth,
+       cstring.MaxWidth,
+       is.cstring,
 
        mmap.csv
       )
@@ -106,6 +112,7 @@ S3method(pad, Ctype)
 S3method(print, Ctype)
 S3method(as.list, Ctype)
 
+S3method(is.na, mmap)
 S3method(dim, mmap)
 S3method("dim<-", mmap)
 S3method(dimnames, mmap)
