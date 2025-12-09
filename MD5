@@ -1,4 +1,4 @@
-21399e054d8520b807b7a71631850eee *DESCRIPTION
+d5a7524fbde41be70795b15dc1e5d1c8 *DESCRIPTION
 014cd9c7aaaadba308a460b8ae9c242d *NAMESPACE
 4d49eb61fa16a7c92b6481822e954fba *R/methods.R
 0dc29b18db0c40356b3776e50af284bd *R/mmap.R
@@ -13,7 +13,7 @@ bf113e8139e9aaaf28c2059eb442a362 *R/zzz.R
 d41d8cd98f00b204e9800998ecf8427e *configure.win
 f3a746570329cbe633b7ff2363bc95f0 *inst/doc/mmap.R
 51d666e0a95a193592c909de855cabde *inst/doc/mmap.Rnw
-fab31348c70b7833d4721c7a24e92b0d *inst/doc/mmap.pdf
+3db8db08f8eebf51f0a50978211a61cc *inst/doc/mmap.pdf
 b7e6639f1e1183cb9826c0ca4b8add97 *man/make.fixedwidth.Rd
 56bebb697abef2c8d47a99d6a3b856ce *man/mmap.Rd
 e2a9efe85260553c8a171ab4621c4f80 *man/mmap.csv.Rd
@@ -26,7 +26,7 @@ c8580653ccd8ac6f9d57617e1c112a32 *man/types.Rd
 d8f82c3b97a39b79603e4b3598c1a447 *src/config.h.in
 88dd70c0eb735547a6ad9b0c20976b15 *src/endian.c
 cd5cdfb67371dea070115476ad1c86a0 *src/init.c
-580ba9570dafeeadf600035dd6432848 *src/mmap.c
+2d086277652fa64e0b8420bff1f8938d *src/mmap.c
 d3f91b0f34202fe0a6b8faee3c826545 *src/mmap.h
 e00415f3d32dfc1febf67b557cc0fcb0 *src/strings.c
 c0e31544bfadbf0d95573f5ceaec0f96 *src/types.c

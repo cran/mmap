@@ -1,15 +1,20 @@
 Package: mmap
 Type: Package
 Title: Map Pages of Memory
-Version: 0.6-22
-Date: 2023-12-08
-Author: Jeffrey A. Ryan
+Version: 0.6-23
+Date: 2025-12-08
+Authors@R: person(given = c("Jeffrey", "A."), family = "Ryan", role = c("aut", "cre"), email = "jeff.a.ryan@gmail.com", comment=c(ORCID="0009-0003-3627-7896"))
 LazyLoad: yes
 Maintainer: Jeffrey A. Ryan <jeff.a.ryan@gmail.com>
 Description: R interface to POSIX mmap and Window's MapViewOfFile.
 VignetteBuilder: utils
+Classification/ACM-2012: 500
 License: GPL-3
+URL: https://github.com/jaryan/mmap
+BugReports: https://github.com/jaryan/mmap/issues
 NeedsCompilation: yes
-Packaged: 2023-12-08 16:51:10 UTC; jeffreyryan
+Packaged: 2025-12-08 18:26:51 UTC; jeffreyryan
+Author: Jeffrey A. Ryan [aut, cre] (ORCID:
+    <https://orcid.org/0009-0003-3627-7896>)
 Repository: CRAN
-Date/Publication: 2023-12-08 21:00:02 UTC
+Date/Publication: 2025-12-09 06:10:19 UTC
