@@ -1,8 +1,9 @@
 Package: mmap
 Type: Package
 Title: Map Pages of Memory
-Version: 0.6-23
-Date: 2025-12-08
+Version: 0.6-24
+Date: 2026-01-30
+Depends: R (>= 4.1.0)
 Authors@R: person(given = c("Jeffrey", "A."), family = "Ryan", role = c("aut", "cre"), email = "jeff.a.ryan@gmail.com", comment=c(ORCID="0009-0003-3627-7896"))
 LazyLoad: yes
 Maintainer: Jeffrey A. Ryan <jeff.a.ryan@gmail.com>
@@ -13,8 +14,8 @@ License: GPL-3
 URL: https://github.com/jaryan/mmap
 BugReports: https://github.com/jaryan/mmap/issues
 NeedsCompilation: yes
-Packaged: 2025-12-08 18:26:51 UTC; jeffreyryan
+Packaged: 2026-01-30 19:03:49 UTC; jeffreyryan
 Author: Jeffrey A. Ryan [aut, cre] (ORCID:
     <https://orcid.org/0009-0003-3627-7896>)
 Repository: CRAN
-Date/Publication: 2025-12-09 06:10:19 UTC
+Date/Publication: 2026-01-31 16:50:02 UTC
